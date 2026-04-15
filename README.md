@@ -30,6 +30,7 @@ classDiagram
         -LocalDateTime lastCheck
         -boolean isUp
         -String serverSignature
+        +gettersAndSetters()
     }
 
     %% Package: com.sentry.core
@@ -38,10 +39,15 @@ classDiagram
         -Map~String, ServiceTarget~ targets
         -ScheduledExecutorService scheduler
         -String webhookUrl
+        +MonitorEngine(HttpClient client, String webhookUrl)
+        +addTarget(String url)
         +addTarget(String url, String authToken)
+        +removeTarget(String url)
         +startMonitoring(int intervalSeconds)
         +stopMonitoring()
-        +getLatestStatus() Map
+        +getLatestStatus() Map~String, ServiceTarget~
+        -performCheck(ServiceTarget target)
+        -sendAlert(ServiceTarget target)
     }
 
     %% Package: com.sentry.ui
@@ -50,7 +56,10 @@ classDiagram
         -MonitorEngine engine
         -Scanner scanner
         -boolean running
+        +ConsoleREPL(MonitorEngine engine, Map commandMap)
         +start()
+        -handleInput(String input)
+        -printStatusTable()
     }
 
     %% Package: com.sentry.commands
@@ -60,19 +69,60 @@ classDiagram
         +getHelp() String
     }
 
-    class AddCommand
-    class StartCommand
-    class StatusCommand
-    class StopCommand
+    class AddCommand {
+        -MonitorEngine engine
+        +execute(String[] args)
+        +getHelp() String
+    }
+
+    class RemoveCommand {
+        -MonitorEngine engine
+        +execute(String[] args)
+        +getHelp() String
+    }
+
+    class StartCommand {
+        -MonitorEngine engine
+        +execute(String[] args)
+        +getHelp() String
+    }
+
+    class StopCommand {
+        -MonitorEngine engine
+        +execute(String[] args)
+        +getHelp() String
+    }
+
+    class StatusCommand {
+        -MonitorEngine engine
+        +execute(String[] args)
+        +getHelp() String
+    }
+
+    class HelpCommand {
+        -Map~String, Command~ commandMap
+        +execute(String[] args)
+        +getHelp() String
+    }
 
     %% Relationships
     ConsoleREPL --> MonitorEngine : controls
     ConsoleREPL --> Command : invokes
+    
     MonitorEngine "1" *-- "many" ServiceTarget : manages
+    
     AddCommand ..|> Command : implements
+    RemoveCommand ..|> Command : implements
     StartCommand ..|> Command : implements
-    StatusCommand ..|> Command : implements
     StopCommand ..|> Command : implements
+    StatusCommand ..|> Command : implements
+    HelpCommand ..|> Command : implements
+
+    AddCommand --> MonitorEngine : modifies
+    RemoveCommand --> MonitorEngine : modifies
+    StartCommand --> MonitorEngine : modifies
+    StopCommand --> MonitorEngine : modifies
+    StatusCommand --> MonitorEngine : reads
 ```
 
 ## Getting Started
