@@ -19,7 +19,7 @@ Built entirely around Java's modern `java.net.http.HttpClient`, NodeSentry moves
 ### System Architecture
 NodeSentry strictly enforces a separation of concerns. The `MonitorEngine` handles all complex I/O and threading, while the `ConsoleREPL` handles user interactions. They communicate strictly through decoupled `Command` objects.
 
-'''mermaid
+```mermaid
 classDiagram
     %% Package: com.sentry.model
     class ServiceTarget {
@@ -73,7 +73,7 @@ classDiagram
     StartCommand ..|> Command : implements
     StatusCommand ..|> Command : implements
     StopCommand ..|> Command : implements
-'''
+```
 
 ## Getting Started
 
