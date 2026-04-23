@@ -4,7 +4,7 @@
 Built entirely around Java's modern `java.net.http.HttpClient`, NodeSentry moves away from legacy synchronous requests to provide a highly concurrent, non-blocking monitoring engine. It allows users to dynamically manage a registry of target URLs—ranging from public websites to secured, token-protected APIs—and tracks vital metrics such as latency, HTTP status codes, and server signatures.
 
 ## Key Features
-* **Asynchronous Networking:** Utilizes `HttpClient.sendAsync()` and `CompletableFuture` to ping dozens of endpoints concurrently without freezing the terminal interface.
+* **Asynchronous Networking:** Utilizes `HttpClient.sendAsync()` to ping dozens of endpoints concurrently without freezing the terminal interface.
 * **Interactive REPL Interface:** A custom command-line interface driven by the **Command Design Pattern** for clean, scalable user input parsing.
 * **Authentication Support:** Capable of passing Bearer Tokens/API keys in HTTP headers to monitor private or secured endpoints.
 * **Deep Header Inspection:** Extracts and logs hidden HTTP headers (like `Server` signatures) to track underlying infrastructure changes.
@@ -21,108 +21,145 @@ NodeSentry strictly enforces a separation of concerns. The `MonitorEngine` handl
 
 ```mermaid
 classDiagram
-    %% Package: com.sentry.model
-    class ServiceTarget {
-        -String url
-        -String authToken
-        -int lastStatusCode
-        -long lastLatencyMs
-        -LocalDateTime lastCheck
-        -boolean isUp
-        -String serverSignature
-        +gettersAndSetters()
+
+    %% Core Components
+    class Main {
+        +main(args: String[]) void
     }
 
-    %% Package: com.sentry.core
     class MonitorEngine {
-        -HttpClient client
-        -Map~String, ServiceTarget~ targets
-        -ScheduledExecutorService scheduler
-        -String webhookUrl
-        +MonitorEngine(HttpClient client, String webhookUrl)
-        +addTarget(String url)
-        +addTarget(String url, String authToken)
-        +removeTarget(String url)
-        +startMonitoring(int intervalSeconds)
-        +stopMonitoring()
+        -client: HttpClient
+        -targets: Map~String, ServiceTarget~
+        -scheduler: ScheduledExecutorService
+        -webhookUrl: String
+        +MonitorEngine(client: HttpClient, webhookUrl: String)
+        +addTarget(url: String) void
+        +addTarget(url: String, authToken: String) void
+        +removeTarget(url: String) boolean
+        +startMonitoring(intervalSeconds: int) void
+        +stopMonitoring() void
         +getLatestStatus() Map~String, ServiceTarget~
-        -performCheck(ServiceTarget target)
-        -sendAlert(ServiceTarget target)
+        +isRunning() boolean
+        -performCheck(target: ServiceTarget) void
+        -handleFailure(target: ServiceTarget) void
+        -sendAlert(target: ServiceTarget) void
     }
 
-    %% Package: com.sentry.ui
+    class ServiceTarget {
+        -url: String
+        -authToken: String
+        -lastStatusCode: int
+        -lastLatencyMs: long
+        -lastCheck: LocalDateTime
+        -isUp: boolean
+        -serverSignature: String
+        -alertSent: boolean
+        +getUrl() String
+        +setUrl(url: String) void
+        +getAuthToken() String
+        +setAuthToken(authToken: String) void
+        +getLastStatusCode() int
+        +setLastStatusCode(lastStatusCode: int) void
+        +getLastLatencyMs() long
+        +setLastLatencyMs(lastLatencyMs: long) void
+        +getLastCheck() LocalDateTime
+        +setLastCheck(lastCheck: LocalDateTime) void
+        +isUp() boolean
+        +setUp(up: boolean) void
+        +getServerSignature() String
+        +setServerSignature(serverSignature: String) void
+        +isAlertSent() boolean
+        +setAlertSent(alertSent: boolean) void
+    }
+
+    %% UI and Interaction
     class ConsoleREPL {
-        -Map~String, Command~ commandMap
-        -MonitorEngine engine
-        -Scanner scanner
-        -boolean running
-        +ConsoleREPL(MonitorEngine engine, Map commandMap)
-        +start()
-        -handleInput(String input)
-        -printStatusTable()
+        -commandMap: Map~String, Command~
+        -engine: MonitorEngine
+        -scanner: Scanner
+        -running: boolean
+        +ConsoleREPL(engine: MonitorEngine, commandMap: Map~String, Command~)
+        +start() void
+        -handleInput(input: String) void
     }
 
-    %% Package: com.sentry.commands
+    %% Command Pattern Interface
     class Command {
         <<interface>>
-        +execute(String[] args)
+        +execute(args: String[]) void
         +getHelp() String
     }
 
+    %% Concrete Commands
     class AddCommand {
-        -MonitorEngine engine
-        +execute(String[] args)
+        -engine: MonitorEngine
+        +AddCommand(engine: MonitorEngine)
+        +execute(args: String[]) void
+        -isValidUrl(urlString: String) boolean
         +getHelp() String
     }
 
     class RemoveCommand {
-        -MonitorEngine engine
-        +execute(String[] args)
+        -engine: MonitorEngine
+        +RemoveCommand(engine: MonitorEngine)
+        +execute(args: String[]) void
         +getHelp() String
     }
 
     class StartCommand {
-        -MonitorEngine engine
-        +execute(String[] args)
+        -engine: MonitorEngine
+        +StartCommand(engine: MonitorEngine)
+        +execute(args: String[]) void
         +getHelp() String
     }
 
     class StopCommand {
-        -MonitorEngine engine
-        +execute(String[] args)
+        -engine: MonitorEngine
+        +StopCommand(engine: MonitorEngine)
+        +execute(args: String[]) void
         +getHelp() String
     }
 
     class StatusCommand {
-        -MonitorEngine engine
-        +execute(String[] args)
+        -engine: MonitorEngine
+        +StatusCommand(engine: MonitorEngine)
+        +execute(args: String[]) void
+        -executeStatic() void
+        -executeLive() void
+        -clearScreen() void
+        -truncate(value: String, length: int) String
         +getHelp() String
     }
 
     class HelpCommand {
-        -Map~String, Command~ commandMap
-        +execute(String[] args)
+        -commandMap: Map~String, Command~
+        +HelpCommand(commandMap: Map~String, Command~)
+        +execute(args: String[]) void
         +getHelp() String
     }
 
     %% Relationships
-    ConsoleREPL --> MonitorEngine : controls
-    ConsoleREPL --> Command : invokes
-    
-    MonitorEngine "1" *-- "many" ServiceTarget : manages
-    
-    AddCommand ..|> Command : implements
-    RemoveCommand ..|> Command : implements
-    StartCommand ..|> Command : implements
-    StopCommand ..|> Command : implements
-    StatusCommand ..|> Command : implements
-    HelpCommand ..|> Command : implements
+    Main --> ConsoleREPL : Creates
+    Main --> MonitorEngine : Creates
+    Main --> Command : Maps
 
-    AddCommand --> MonitorEngine : modifies
-    RemoveCommand --> MonitorEngine : modifies
-    StartCommand --> MonitorEngine : modifies
-    StopCommand --> MonitorEngine : modifies
-    StatusCommand --> MonitorEngine : reads
+    ConsoleREPL --> MonitorEngine : Controls
+    ConsoleREPL o-- Command : Stores in Map
+
+    MonitorEngine *-- ServiceTarget : Manages
+
+    Command <|.. AddCommand : Implements
+    Command <|.. RemoveCommand : Implements
+    Command <|.. StartCommand : Implements
+    Command <|.. StopCommand : Implements
+    Command <|.. StatusCommand : Implements
+    Command <|.. HelpCommand : Implements
+
+    AddCommand --> MonitorEngine : Mutates
+    RemoveCommand --> MonitorEngine : Mutates
+    StartCommand --> MonitorEngine : Controls
+    StopCommand --> MonitorEngine : Controls
+    StatusCommand --> MonitorEngine : Reads
 ```
 
 ## Getting Started
@@ -151,7 +188,7 @@ Once the REPL is running, use the following commands to interact with the engine
 | `remove` | `<url>` | Removes a specific URL from the monitoring pool. |
 | `start` | `<interval_in_seconds>` | Spawns a background thread to begin pinging all targets. |
 | `stop` | None | Safely shuts down the background monitoring thread. |
-| `status` | None | Prints a formatted table of all active targets, their status, and latency. |
+| `status` | `[live]` | Prints a formatted table of all active targets, their status, and latency. Live optionally gives a live dashboard |
 | `help` | None | Displays a list of available commands. |
 | `exit` | None | Shuts down the application. |
 

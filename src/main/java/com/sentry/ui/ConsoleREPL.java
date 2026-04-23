@@ -28,7 +28,40 @@ public class ConsoleREPL {
      * Starts the interactive command loop and blocks until exit
      */
     public void start() {
+        // Print banner
+        System.out.println("==================================================");
+        System.out.println("   Interactive NodeSentry Monitor v1.0");
+        System.out.println("==================================================");
+        System.out.println("Type 'help' to see a list of available commands.\n");
 
+        // Main loop
+        running = true;
+        while (running) {
+            System.out.print("Sentry> ");
+            String input = scanner.nextLine().trim();
+
+            // No input
+            if (input.isEmpty()) {
+                continue;
+            }
+
+            // Quit / exit
+            if (input.equalsIgnoreCase("exit") || input.equalsIgnoreCase("quit")) {
+                System.out.println("Shutting down NodeSentry. Goodbye!");
+                running = false;
+                
+                try {
+                    engine.stopMonitoring(); 
+                } catch (IllegalStateException e) {
+                    // Ignore this, it just means the engine wasn't monitoring when the program was stopped so nothing actually went wrong
+                }
+                
+                break;
+            }
+
+            // Any other input handled by handleInput function
+            handleInput(input);
+        }
     }
 
     /**
@@ -36,13 +69,25 @@ public class ConsoleREPL {
      * @param input the full string entered by the user
      */
     private void handleInput(String input) {
-        
-    }
+        // Split by one or more spaces
+        String[] args = input.split("\\s+");
+        String commandName = args[0].toLowerCase();
 
-    /**
-     * Renders a formatted table of service statuses to the console
-     */
-    private void printStatusTable() {
-        
+        Command command = commandMap.get(commandName);
+
+        if (command == null) {
+            System.out.println("[ERROR] Command not found: '" + commandName + "'. Type 'help' for available commands.");
+            return;
+        }
+
+        try {
+            command.execute(args);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            // Handle expected errors
+            System.out.println("[ERROR] " + e.getMessage());
+        } catch (Exception e) {
+            // Handle unexpected errors
+            System.out.println("[FATAL] An unexpected error occurred: " + e.getMessage());
+        }
     }
 }

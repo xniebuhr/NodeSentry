@@ -17,7 +17,18 @@ public class StartCommand implements Command {
     
     @Override
     public void execute(String[] args) throws IllegalArgumentException, IllegalStateException {
-
+        // No interval given
+        if (args.length < 2) {
+            throw new IllegalArgumentException("Missing interval. Usage: " + getHelp());
+        }
+        
+        try {
+            int interval = Integer.parseInt(args[1]);
+            engine.startMonitoring(interval);
+            System.out.println("[INFO] Background monitoring engine started. Pinging targets every " + interval + " seconds...");
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Interval must be a valid number. Usage: " + getHelp());
+        }
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 /**
  * Represents a specific web service endpoint being monitored by the system
+ * Consists of only data, getters, and setters, all logic handled by engine
  */
 public class ServiceTarget {
     private String url;
@@ -13,6 +14,7 @@ public class ServiceTarget {
     private LocalDateTime lastCheck;
     private boolean isUp;
     private String serverSignature;
+    private boolean alertSent = false;
 
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
@@ -28,4 +30,6 @@ public class ServiceTarget {
     public void setUp(boolean up) { isUp = up; }
     public String getServerSignature() { return serverSignature; }
     public void setServerSignature(String serverSignature) { this.serverSignature = serverSignature; }
+    public boolean isAlertSent() { return alertSent; }
+    public void setAlertSent(boolean alertSent) { this.alertSent = alertSent; }
 }

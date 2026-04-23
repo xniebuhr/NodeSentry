@@ -17,7 +17,19 @@ public class RemoveCommand implements Command {
     
     @Override
     public void execute(String[] args) throws IllegalArgumentException {
-
+        // No URL
+        if (args.length < 2) {
+            throw new IllegalArgumentException("Missing URL. Usage: " + getHelp());
+        }
+        
+        String url = args[1];
+        boolean wasRemoved = engine.removeTarget(url);
+        
+        if (wasRemoved) {
+            System.out.println("[SUCCESS] Removed target: " + url);
+        } else {
+            System.out.println("[WARNING] Target not found in registry: " + url);
+        }
     }
 
     @Override

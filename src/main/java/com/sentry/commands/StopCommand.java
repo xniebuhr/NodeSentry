@@ -17,7 +17,8 @@ public class StopCommand implements Command {
     
     @Override
     public void execute(String[] args) throws IllegalStateException {
-
+        engine.stopMonitoring();
+        System.out.println("[INFO] Background monitoring engine halted.");
     }
 
     @Override

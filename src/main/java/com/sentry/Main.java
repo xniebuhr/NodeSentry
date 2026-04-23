@@ -22,7 +22,8 @@ public class Main {
         HttpClient client = HttpClient.newHttpClient();
         
         // Set up webhook url
-        String webhookUrl = "WEBHOOK_URL";
+        // Currently using a discord webhook that I made a new server to test with, change to 'WEBHOOK_URL' to ignore or change to your own personal webhook if running
+        String webhookUrl = "https://discord.com/api/webhooks/1496254747915587644/mWb-ClxdhvT_Zl9OJsfodMG-mSCFMrTFD4s3GZbyMolwnF4D4nKcgDgVDHECOYa2-c6c";
         
         // Instantiate the engine
         MonitorEngine engine = new MonitorEngine(client, webhookUrl);
@@ -36,7 +37,7 @@ public class Main {
         commands.put("status", new StatusCommand(engine));
         commands.put("help", new HelpCommand(commands));
         
-        // Boot up the user interface
+        // Boot up the user interface and start
         ConsoleREPL ui = new ConsoleREPL(engine, commands);
         ui.start();
     }
