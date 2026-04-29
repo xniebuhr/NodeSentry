@@ -1,33 +1,67 @@
 package com.sentry.core;
 
-import com.sentry.core.MonitorEngine;
 import com.sentry.model.ServiceTarget;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.http.HttpClient;
-import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MonitorEngineTest {
 
+    private MonitorEngine engine;
+    private final String testUrl = "https://google.com";
+
+    @BeforeEach
+    public void setUp() {
+        engine = new MonitorEngine(HttpClient.newHttpClient(), "fake_webhook");
+    }
+
+    @AfterEach
+    public void tearDown() {
+        if (engine != null && engine.isRunning()) {
+            try {
+                engine.stopMonitoring();
+            } catch (IllegalStateException ignored) { /* Do nothing */ }
+        }
+    }
+
     @Test
-    public void testAddAndRemoveTarget() {
-        // Set up a fresh engine with dummy network variables
-        HttpClient dummyClient = HttpClient.newHttpClient();
-        MonitorEngine engine = new MonitorEngine(dummyClient, "fake_webhook");
-        
-        // Add the target
-        String testUrl = "https://google.com";
+    public void testAddTargetSuccess() {
         engine.addTarget(testUrl);
+        assertTrue(engine.getLatestStatus().containsKey(testUrl));
+    }
 
-        // Verify it was actually added to the map
-        Map<String, ServiceTarget> currentStatus = engine.getLatestStatus();
-        Assertions.assertTrue(currentStatus.containsKey(testUrl), "The engine should contain the added URL");
-        Assertions.assertEquals(testUrl, currentStatus.get(testUrl).getUrl(), "The stored URL should match the input");
+    @Test
+    public void testAddSecuredTargetSuccess() {
+        engine.addTarget(testUrl, "secret_token");
+        ServiceTarget target = engine.getLatestStatus().get(testUrl);
+        assertEquals("secret_token", target.getAuthToken());
+    }
 
-        // Remove the target and verify it's gone
-        boolean wasRemoved = engine.removeTarget(testUrl);
-        Assertions.assertTrue(wasRemoved, "removeTarget should return true for an existing URL");
-        Assertions.assertFalse(engine.getLatestStatus().containsKey(testUrl), "The URL should no longer be in the registry");
+    @Test
+    public void testAddInvalidTargetThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> engine.addTarget(""));
+        assertThrows(IllegalArgumentException.class, () -> engine.addTarget("google.com")); 
+    }
+
+    @Test
+    public void testRemoveTarget() {
+        engine.addTarget(testUrl);
+        assertTrue(engine.removeTarget(testUrl)); 
+        assertFalse(engine.removeTarget("https://not-here.com")); 
+    }
+
+    @Test
+    public void testStartMonitoringTwiceThrowsException() {
+        engine.startMonitoring(10);
+        assertThrows(IllegalStateException.class, () -> engine.startMonitoring(10));
+    }
+
+    @Test
+    public void testStopMonitoringWhileStoppedThrowsException() {
+        assertThrows(IllegalStateException.class, () -> engine.stopMonitoring());
     }
 }

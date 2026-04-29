@@ -9,12 +9,12 @@ import java.time.LocalDateTime;
 public class ServiceTarget {
     private String url;
     private String authToken;
-    private int lastStatusCode;
-    private long lastLatencyMs;
+    private volatile int lastStatusCode;
+    private volatile long lastLatencyMs;
     private LocalDateTime lastCheck;
-    private boolean isUp;
+    private volatile boolean isUp;
     private String serverSignature;
-    private boolean alertSent = false;
+    private volatile boolean alertSent = false;
 
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }

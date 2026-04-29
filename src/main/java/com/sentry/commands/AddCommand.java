@@ -59,24 +59,7 @@ public class AddCommand implements Command {
 
             // Must be parsable by Java's internal URI engine
             URI uri = new URI(urlString);
-
-            // Must successfully extract a host
-            String host = uri.getHost();
-            if (host == null || host.isEmpty()) {
-                return false;
-            }
-
-            // Cannot start or end with a hyphen
-            if (host.startsWith("-") || host.endsWith("-")) {
-                return false;
-            }
-
-            // Must only contain letters, numbers, periods, and hyphens
-            if (!host.matches("^[a-zA-Z0-9.-]+$")) {
-                return false;
-            }
-
-            return true;
+            return uri.getHost() != null && !uri.getHost().isEmpty();
 
         } catch (URISyntaxException e) {
             // Bad URL

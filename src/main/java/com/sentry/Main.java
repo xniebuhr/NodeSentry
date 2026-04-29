@@ -5,7 +5,7 @@ import com.sentry.core.MonitorEngine;
 import com.sentry.ui.ConsoleREPL;
 
 import java.net.http.HttpClient;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -22,14 +22,13 @@ public class Main {
         HttpClient client = HttpClient.newHttpClient();
         
         // Set up webhook url
-        // Currently using a discord webhook that I made a new server to test with, change to 'WEBHOOK_URL' to ignore or change to your own personal webhook if running
-        String webhookUrl = "https://discord.com/api/webhooks/1496254747915587644/mWb-ClxdhvT_Zl9OJsfodMG-mSCFMrTFD4s3GZbyMolwnF4D4nKcgDgVDHECOYa2-c6c";
+        String webhookUrl = "WEBHOOK_URL";
         
         // Instantiate the engine
         MonitorEngine engine = new MonitorEngine(client, webhookUrl);
         
         // Map out all available commands
-        Map<String, Command> commands = new HashMap<>();
+        Map<String, Command> commands = new LinkedHashMap<>();
         commands.put("add", new AddCommand(engine));
         commands.put("remove", new RemoveCommand(engine));
         commands.put("start", new StartCommand(engine));
